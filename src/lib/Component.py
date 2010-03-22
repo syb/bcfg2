@@ -11,8 +11,8 @@ import pydoc
 import sys
 import time
 import threading
-import urlparse
-import xmlrpclib
+import urllib.parse
+import xmlrpc.client
 
 import Bcfg2.Logger
 from Bcfg2.Statistics import Statistics
@@ -56,11 +56,11 @@ def run_component(component_cls, location, daemon, pidfile_name, to_file,
         os.chdir(os.sep)
 
         pidfile = open(pidfile_name or "/dev/null", "w")
-        print >> pidfile, os.getpid()
+        print(os.getpid(), file=pidfile)
         pidfile.close()
 
     component = component_cls(cfile=cfile, **cls_kwargs)
-    up = urlparse.urlparse(location)
+    up = urllib.parse.urlparse(location)
     port = tuple(up[1].split(':'))
     port = (port[0], int(port[1]))
     try:
@@ -149,7 +149,7 @@ class Component (object):
         Automatic tasks are member callables with an attribute
         automatic == True.
         """
-        for name, func in inspect.getmembers(self, callable):
+        for name, func in inspect.getmembers(hasattr(self, '__call__')):
             if getattr(func, "automatic", False):
                 need_to_lock = not getattr(func, 'locking', False)
                 if (time.time() - func.automatic_ts) > \
@@ -202,11 +202,11 @@ class Component (object):
                 method_func = self._resolve_exposed_method(method)
             except NoExposedMethod:
                 self.logger.error("Unknown method %s" % (method))
-                raise xmlrpclib.Fault(7, "Unknown method %s" % method)
-            except Exception, e:
+                raise xmlrpc.client.Fault(7, "Unknown method %s" % method)
+            except Exception as e:
                 if getattr(e, "log", True):
                     self.logger.error(e, exc_info=True)
-                raise xmlrpclib.Fault(getattr(e, "fault_code", 1), str(e))
+                raise xmlrpc.client.Fault(getattr(e, "fault_code", 1), str(e))
 
         if getattr(method_func, 'locking', False):
             need_to_lock = False
@@ -225,12 +225,12 @@ class Component (object):
                     self.instance_statistics.add_value('component_lock',
                                                        lock_done - lock_start)
                 self.instance_statistics.add_value(method, method_done - method_start)
-        except xmlrpclib.Fault:
+        except xmlrpc.client.Fault:
             raise
-        except Exception, e:
+        except Exception as e:
             if getattr(e, "log", True):
                 self.logger.error(e, exc_info=True)
-            raise xmlrpclib.Fault(getattr(e, "fault_code", 1), str(e))
+            raise xmlrpc.client.Fault(getattr(e, "fault_code", 1), str(e))
         return result
 
     @exposed

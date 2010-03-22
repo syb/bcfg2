@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''The XML-RPC Bcfg2 Server'''
 __revision__ = '$Revision$'
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     try:
     # check whether the specified bcfg2.conf exists
         if not os.path.exists(setup['configfile']):
-            raise CoreInitError, "Could not read %s" % setup['configfile']
+            raise CoreInitError("Could not read %s" % setup['configfile'])
         Bcfg2.Component.run_component(Bcfg2.Server.Core.Core,
                                       location=setup['location'],
                                       daemon = setup['daemon'],
@@ -68,7 +68,7 @@ if __name__ == '__main__':
                                       certfile=setup['cert'],
                                       ca=setup['ca'],
                                       )
-    except CoreInitError, msg:
+    except CoreInitError as msg:
         logger.error(msg)
         logger.error("exiting")
     except KeyboardInterrupt:

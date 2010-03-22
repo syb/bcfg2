@@ -7,19 +7,20 @@ import lxml.etree
 import select
 import threading
 import time
-import xmlrpclib
+import xmlrpc.client
 
 from Bcfg2.Component import Component, exposed
 from Bcfg2.Server.Plugin import PluginInitError, PluginExecutionError
 import Bcfg2.Server.FileMonitor
 import Bcfg2.Server.Plugins.Metadata
+from functools import reduce
 
 logger = logging.getLogger('Bcfg2.Server.Core')
 
 def critical_error(operation):
     '''Log and err, traceback and return an xmlrpc fault to client'''
     logger.error(operation, exc_info=1)
-    raise xmlrpclib.Fault(7, "Critical unexpected failure: %s" % (operation))
+    raise xmlrpc.client.Fault(7, "Critical unexpected failure: %s" % (operation))
 
 try:
     import psyco
@@ -49,8 +50,8 @@ class Core(Component):
         except IOError:
             logger.error("Failed to instantiate fam driver %s" % filemonitor,
                          exc_info=1)
-            raise CoreInitError, "failed to instantiate fam driver (used %s)" % \
-                  filemonitor
+            raise CoreInitError("failed to instantiate fam driver (used %s)" % \
+                  filemonitor)
         self.pubspace = {}
         self.cfile = cfile
         self.cron = {}
@@ -66,35 +67,35 @@ class Core(Component):
         for plugin in plugins:
             if not plugin in self.plugins:
                 self.init_plugins(plugin)
-        expl = [plug for (name, plug) in self.plugins.iteritems()
+        expl = [plug for (name, plug) in self.plugins.items()
                 if plug.experimental]
         if expl:
             logger.info("Loading experimental plugin(s): %s" % \
                         (" ".join([x.name for x in expl])))
             logger.info("NOTE: Interfaces subject to change")
-        depr = [plug for (name, plug) in self.plugins.iteritems()
+        depr = [plug for (name, plug) in self.plugins.items()
                 if plug.deprecated]
         if depr:
             logger.info("Loading deprecated plugin(s): %s" % \
                         (" ".join([x.name for x in depr])))
 
 
-        mlist = [p for p in self.plugins.values() if \
+        mlist = [p for p in list(self.plugins.values()) if \
                  isinstance(p, Bcfg2.Server.Plugin.Metadata)]
         if len(mlist) == 1:
             self.metadata = mlist[0]
         else:
             logger.error("No Metadata Plugin loaded; failed to instantiate Core")
-            raise CoreInitError, "No Metadata Plugin"
-        self.statistics = [plugin for plugin in self.plugins.values() if \
+            raise CoreInitError("No Metadata Plugin")
+        self.statistics = [plugin for plugin in list(self.plugins.values()) if \
                              isinstance(plugin, Bcfg2.Server.Plugin.Statistics)]
         self.pull_sources = [plugin for plugin in self.statistics if \
                              isinstance(plugin, Bcfg2.Server.Plugin.PullSource)]
-        self.generators = [plugin for plugin in self.plugins.values() if \
+        self.generators = [plugin for plugin in list(self.plugins.values()) if \
                              isinstance(plugin, Bcfg2.Server.Plugin.Generator)]
-        self.structures = [plugin for plugin in self.plugins.values() if \
+        self.structures = [plugin for plugin in list(self.plugins.values()) if \
                              isinstance(plugin, Bcfg2.Server.Plugin.Structure)]
-        self.connectors = [plugin for plugin in self.plugins.values() if \
+        self.connectors = [plugin for plugin in list(self.plugins.values()) if \
                            isinstance(plugin, Bcfg2.Server.Plugin.Connector)]
         self.ca = ca
         self.fam_thread = threading.Thread(target=self._file_monitor_thread)
@@ -114,7 +115,7 @@ class Core(Component):
             except:
                 continue
             # VCS plugin periodic updates
-            for plugin in self.plugins.values():
+            for plugin in list(self.plugins.values()):
                 if isinstance(plugin, Bcfg2.Server.Plugin.Version):
                     self.revision = plugin.get_revision()
 
@@ -122,7 +123,7 @@ class Core(Component):
         try:
             mod = getattr(__import__("Bcfg2.Server.Plugins.%s" %
                                 (plugin)).Server.Plugins, plugin)
-        except ImportError, e:
+        except ImportError as e:
             try:
                 mod = __import__(plugin)
             except:
@@ -138,18 +139,18 @@ class Core(Component):
                 (plugin), exc_info=1)
 
     def shutdown(self):
-        for plugin in self.plugins.values():
+        for plugin in list(self.plugins.values()):
             plugin.shutdown()
 
     def validate_data(self, metadata, data, base_cls):
-        for plugin in self.plugins.values():
+        for plugin in list(self.plugins.values()):
             if isinstance(plugin, base_cls):
                 try:
                     if base_cls == Bcfg2.Server.Plugin.StructureValidator:
                         plugin.validate_structures(metadata, data)
                     elif base_cls == Bcfg2.Server.Plugin.GoalValidator:
                         plugin.validate_goals(metadata, data)
-                except Bcfg2.Server.Plugin.ValidationError, err:
+                except Bcfg2.Server.Plugin.ValidationError as err:
                     logger.error("Plugin %s structure validation failed: %s" \
                                  % (plugin.name, err.message))
                     raise
@@ -219,7 +220,7 @@ class Core(Component):
         if len(g2list) == 1:
             return g2list[0].HandleEntry(entry, metadata)
         entry.set('failure', 'no matching generator')
-        raise PluginExecutionError, (entry.tag, entry.get('name'))
+        raise PluginExecutionError(entry.tag, entry.get('name'))
 
     def BuildConfiguration(self, client):
         '''Build Configuration for client'''
@@ -266,7 +267,7 @@ class Core(Component):
 
     def GetDecisions(self, metadata, mode):
         result = []
-        for plugin in self.plugins.values():
+        for plugin in list(self.plugins.values()):
             try:
                 if isinstance(plugin, Bcfg2.Server.Plugin.Decision):
                     result += plugin.GetDecisions(metadata, mode)
@@ -319,11 +320,11 @@ class Core(Component):
         except Bcfg2.Server.Plugins.Metadata.MetadataConsistencyError:
             warning = 'Client metadata resolution error for %s; check server log' % address[0]
             self.logger.warning(warning)
-            raise xmlrpclib.Fault(6, warning)
+            raise xmlrpc.client.Fault(6, warning)
         except Bcfg2.Server.Plugins.Metadata.MetadataRuntimeError:
             err_msg = 'metadata system runtime failure'
             self.logger.error(err_msg)
-            raise xmlrpclib.Fault(6, err_msg)
+            raise xmlrpc.client.Fault(6, err_msg)
         except:
             critical_error("error determining client probes")
 
@@ -336,7 +337,7 @@ class Core(Component):
         except Bcfg2.Server.Plugins.Metadata.MetadataConsistencyError:
             warning = 'metadata consistency error'
             self.logger.warning(warning)
-            raise xmlrpclib.Fault(6, warning)
+            raise xmlrpc.client.Fault(6, warning)
         # clear dynamic groups
         self.metadata.cgroups[meta.hostname] = []
         try:
@@ -371,7 +372,7 @@ class Core(Component):
                 Bcfg2.Server.Plugins.Metadata.MetadataRuntimeError):
             warning = 'metadata consistency error'
             self.logger.warning(warning)
-            raise xmlrpclib.Fault(6, warning)
+            raise xmlrpc.client.Fault(6, warning)
         return True
 
     @exposed
@@ -384,7 +385,7 @@ class Core(Component):
                                        xml_declaration=True)
         except Bcfg2.Server.Plugins.Metadata.MetadataConsistencyError:
             self.logger.warning("Metadata consistency failure for %s" % (address))
-            raise xmlrpclib.Fault(6, "Metadata consistency failure")
+            raise xmlrpc.client.Fault(6, "Metadata consistency failure")
 
     @exposed
     def RecvStats(self, address, stats):

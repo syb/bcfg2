@@ -24,17 +24,17 @@ class Tidy(Bcfg2.Server.Admin.Mode):
         if '-f' in args or '-I' in args:
             if '-I' in args:
                 for name in badfiles[:]:
-                    answer = raw_input("Unlink file %s? [yN] " % name)
+                    answer = input("Unlink file %s? [yN] " % name)
                     if answer not in ['y', 'Y']:
                         badfiles.remove(name)
             for name in badfiles:
                 try:
                     os.unlink(name)
                 except IOError:
-                    print "Failed to unlink %s" % name
+                    print("Failed to unlink %s" % name)
         else:
             for name in badfiles:
-                print name
+                print(name)
 
     def buildTidyList(self):
         '''Clean up unused or unusable files from the repository'''

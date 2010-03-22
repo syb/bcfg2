@@ -31,7 +31,7 @@ class Perf(Bcfg2.Server.Admin.Mode):
                                            cert = setup['certificate'],
                                            ca = setup['ca'])
         data = proxy.get_statistics()
-        for key, value in data.iteritems():
+        for key, value in data.items():
             data = tuple(["%.06f" % (item) for item in value[:-1]] + [value[-1]])
             output.append((key, ) + data)
         self.print_table(output)

@@ -41,7 +41,7 @@ def process_delta(data, delta):
         output = open(basefile.name, 'r').read()
         [os.unlink(fname) for fname in [basefile.name, dfile.name]]
         if ret >> 8 != 0:
-            raise Bcfg2.Server.Plugin.PluginExecutionError, ('delta', delta)
+            raise Bcfg2.Server.Plugin.PluginExecutionError('delta', delta)
         return output
 
 class CfgMatcher:
@@ -69,7 +69,7 @@ class CfgEntrySet(Bcfg2.Server.Plugin.EntrySet):
 
     def get_pertinent_entries(self, metadata):
         '''return a list of all entries pertinent to a client => [base, delta1, delta2]'''
-        matching = [ent for ent in self.entries.values() if \
+        matching = [ent for ent in list(self.entries.values()) if \
                     ent.specific.matches(metadata)]
         matching.sort(self.sort_by_specific)
         non_delta = [matching.index(m) for m in matching if not m.specific.delta]
@@ -95,7 +95,7 @@ class CfgEntrySet(Bcfg2.Server.Plugin.EntrySet):
         if entry.get('encoding') == 'base64':
             entry.text = binascii.b2a_base64(data)
         else:
-            entry.text = unicode(data, self.encoding)
+            entry.text = str(data, self.encoding)
         if entry.text in ['', None]:
             entry.set('empty', 'true')
 
@@ -127,14 +127,14 @@ class CfgEntrySet(Bcfg2.Server.Plugin.EntrySet):
         badattr = [attr for attr in ['owner', 'group', 'perms'] if attr in new_entry]
         if badattr:
             if self.infoxml:
-                print "InfoXML support not yet implemented"
+                print("InfoXML support not yet implemented")
                 return
             metadata_updates = {}
             metadata_updates.update(self.metadata)
             for attr in badattr:
                 metadata_updates[attr] = new_entry.get(attr)
             infofile = open(self.path + '/:info', 'w')
-            for x in metadata_updates.iteritems():
+            for x in metadata_updates.items():
                 infofile.write("%s: %s\n" % x)
             infofile.close()
             if log:

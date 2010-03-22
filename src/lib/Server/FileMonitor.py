@@ -211,7 +211,7 @@ class Pseudo(FileMonitor):
 
     def AddMonitor(self, path, obj):
         '''add a monitor to path, installing a callback to obj.HandleEvent'''
-        handleID = len(self.handles.keys())
+        handleID = len(list(self.handles.keys()))
         mode = os.stat(path)[stat.ST_MODE]
         handle = Event(handleID, path, 'exists')
         if stat.S_ISDIR(mode):

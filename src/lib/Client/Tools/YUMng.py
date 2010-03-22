@@ -1,7 +1,7 @@
 '''This provides bcfg2 support for yum'''
 __revision__ = '$Revision: $'
 
-import ConfigParser
+import configparser
 import copy
 import os.path
 import sys
@@ -16,7 +16,7 @@ except NameError:
     from sets import Set as set
 
 YAD = True
-CP = ConfigParser.ConfigParser()
+CP = configparser.ConfigParser()
 try:
     if '-C' in sys.argv:
         CP.read([sys.argv[sys.argv.index('-C') + 1]])
@@ -337,7 +337,7 @@ class YUMng(Bcfg2.Client.Tools.RPMng.RPMng):
                 for inst in pkg:
                     if pkg.get('name') != 'gpg-pubkey':
                         pkg_arg = pkg.get('name') + '-'
-                        if inst.attrib.has_key('epoch'):
+                        if 'epoch' in inst.attrib:
                             pkg_arg = pkg_arg + inst.get('epoch') + ':'
                         pkg_arg = pkg_arg + inst.get('version') + '-' + inst.get('release')
                         if 'arch' in inst.attrib:

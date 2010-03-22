@@ -32,17 +32,17 @@ class ldapauth(object):
         """
         #p = self.user_profile(login,passwd)
         d = self.user_dn(login) #success, distname
-        print d[1]
+        print(d[1])
         if d[0] == 'success':
             pass
             p = self.user_bind(d[1],passwd)
             if p[0] == 'success':
                 #parse results
                 parsed = self.parse_results(p[2])
-                print self.department
+                print(self.department)
                 self.group_test = self.member_of()
                 securitylevel = self.security_level()
-                print "ACCESS LEVEL: " + str(securitylevel)
+                print("ACCESS LEVEL: " + str(securitylevel))
             else:
                 raise LDAPAUTHError(p[2])
         else:
@@ -66,7 +66,7 @@ class ldapauth(object):
                                       ldap_login,None)
             result_type,result_data = conn.result(result_id,0)
             return ('success','User profile found',result_data,)
-        except ldap.LDAPError,e:
+        except ldap.LDAPError as e:
             #connection failed
             return ('error','LDAP connect failed',e,)
     
@@ -82,7 +82,7 @@ class ldapauth(object):
                                       cn[0],None)
             result_type,result_data = conn.result(result_id,0)
             return ('success','User profile found',result_data,)
-        except ldap.LDAPError,e:
+        except ldap.LDAPError as e:
             #connection failed
             return ('error','LDAP connect failed',e,)
 
@@ -103,7 +103,7 @@ class ldapauth(object):
             raw_obj = result_data[0][1]
             distinguishedName = raw_obj['distinguishedName']
             return ('success',distinguishedName[0],)
-        except ldap.LDAPError,e:
+        except ldap.LDAPError as e:
             #connection failed
             return ('error','LDAP connect failed',e,)
 
@@ -129,7 +129,7 @@ class ldapauth(object):
             self.is_superuser = False
             
             return
-        except KeyError, e:
+        except KeyError as e:
             raise LDAPAUTHError("Portions of the LDAP User profile not present")
         
     def member_of(self):

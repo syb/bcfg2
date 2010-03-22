@@ -20,14 +20,14 @@ class Bundle(Bcfg2.Server.Admin.MetadataCore):
             try:
                 self.metadata.add_bundle(args[1])
             except MetadataConsistencyError:
-                print "Error in adding bundle"
+                print("Error in adding bundle")
                 raise SystemExit(1)
         elif args[0] in ['delete', 'remove', 'del', 'rm']:
             try:
                 self.metadata.remove_bundle(args[1])
             except MetadataConsistencyError:
-                print "Error in deleting bundle"
+                print("Error in deleting bundle")
                 raise SystemExit(1)
         else:
-            print "No command specified"
+            print("No command specified")
             raise SystemExit(1)

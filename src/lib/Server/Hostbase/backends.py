@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 #from ldapauth import *
-from nisauth import *
+from .nisauth import *
 
 __revision__ = '$Revision$'
 
@@ -57,13 +57,13 @@ class NISBackend(object):
             
             return user
 
-        except NISAUTHError, e:
+        except NISAUTHError as e:
             return None
 
 
     def get_user(self, user_id):
         try:
             return User.objects.get(pk=user_id)
-        except User.DoesNotExist, e:
+        except User.DoesNotExist as e:
             return None
     

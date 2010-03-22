@@ -11,6 +11,7 @@ import re
 from lxml.etree import XML, XMLSyntaxError
 
 import Bcfg2.Options
+from functools import reduce
 
 # grab default metadata info from bcfg2.conf
 opts = {'owner': Bcfg2.Options.MDATA_OWNER,
@@ -167,12 +168,12 @@ class ValidationError(Exception):
 class StructureValidator(object):
     '''Validate/modify goal structures'''
     def validate_structures(self, metadata, structures):
-        raise ValidationError, "not implemented"
+        raise ValidationError("not implemented")
 
 class GoalValidator(object):
     '''Validate/modify configuration goals'''
     def validate_goals(self, metadata, goals):
-        raise ValidationError, "not implemented"
+        raise ValidationError("not implemented")
 
 class Version(object):
     '''Interact with various version control systems'''
@@ -199,7 +200,7 @@ class FileBacked(object):
         if event and event.code2str() not in ['exists', 'changed', 'created']:
             return
         try:
-            self.data = file(self.name).read()
+            self.data = open(self.name, mode='r')
             self.Index()
         except IOError:
             logger.error("Failed to read file %s" % (self.name))
@@ -225,7 +226,7 @@ class DirectoryBacked(object):
         return self.entries[key]
 
     def __iter__(self):
-        return self.entries.iteritems()
+        return iter(self.entries.items())
 
     def AddEntry(self, name):
         '''Add new entry to data structures upon file creation'''
@@ -264,9 +265,9 @@ class DirectoryBacked(object):
         elif action in ['endExist']:
             pass
         else:
-            print "Got unknown event %s %s %s" % (event.requestID,
+            print("Got unknown event %s %s %s" % (event.requestID,
                                                   event.code2str(),
-                                                  event.filename)
+                                                  event.filename))
 
 class XMLFileBacked(FileBacked):
     '''This object is a coherent cache for an XML file to be used as a part of DirectoryBacked.'''
@@ -305,7 +306,7 @@ class StructFile(XMLFileBacked):
     def Index(self):
         '''Build internal data structures'''
         try:
-            xdata = lxml.etree.XML(self.data)
+            xdata = lxml.etree.XML(self.data.read())
         except lxml.etree.XMLSyntaxError:
             logger.error("Failed to parse file %s" % self.name)
             return
@@ -327,7 +328,7 @@ class StructFile(XMLFileBacked):
 
     def Match(self, metadata):
         '''Return matching fragments of independent'''
-        matching = [frag for (pred, frag) in self.fragments.iteritems() if pred(metadata)]
+        matching = [frag for (pred, frag) in self.fragments.items() if pred(metadata)]
         if matching:
             return reduce(lambda x, y:x+y, matching)
         logger.error("File %s got null match" % (self.name))
@@ -353,7 +354,7 @@ class INode:
                 psrc = self.nraw
             else:
                 psrc = self.raw
-            if data.tag in psrc.keys():
+            if data.tag in list(psrc.keys()):
                 self.predicate = eval(psrc[data.tag] % (data.get('name')),
                                       {'predicate':predicate})
             else:
@@ -405,13 +406,13 @@ class XMLSrc(XMLFileBacked):
     def HandleEvent(self, _=None):
         '''Read file upon update'''
         try:
-            data = file(self.name).read()
+            data = open(self.name, mode='r')
         except IOError:
             logger.error("Failed to read file %s" % (self.name))
             return
         self.items = {}
         try:
-            xdata = lxml.etree.XML(data)
+            xdata = lxml.etree.XML(data.read())
         except lxml.etree.XMLSyntaxError:
             logger.error("Failed to parse file %s" % (self.name))
             return
@@ -457,8 +458,8 @@ class PrioDir(Plugin, Generator, XMLDirectoryBacked):
         '''Handle events and update dispatch table'''
         XMLDirectoryBacked.HandleEvent(self, event)
         self.Entries = {}
-        for src in self.entries.values():
-            for itype, children in src.items.iteritems():
+        for src in list(self.entries.values()):
+            for itype, children in src.items.items():
                 for child in children:
                     try:
                         self.Entries[itype][child] = self.BindEntry
@@ -467,14 +468,14 @@ class PrioDir(Plugin, Generator, XMLDirectoryBacked):
 
     def BindEntry(self, entry, metadata):
         '''Check package lists of package entries'''
-        [src.Cache(metadata) for src in self.entries.values()]
+        [src.Cache(metadata) for src in list(self.entries.values())]
         name = entry.get('name')
         if not src.cache:
             self.logger.error("Called before data loaded")
             raise PluginExecutionError
-        matching = [src for src in self.entries.values()
+        matching = [src for src in list(self.entries.values())
                     if src.cache and entry.tag in src.cache[1]
-                    and src.cache[1][entry.tag].has_key(name)]
+                    and name in src.cache[1][entry.tag]]
         if len(matching) == 0:
             raise PluginExecutionError
         elif len(matching) == 1:
@@ -496,7 +497,7 @@ class PrioDir(Plugin, Generator, XMLDirectoryBacked):
             entry.text = data['__text__']
         if '__children__' in data:
             [entry.append(copy.deepcopy(item)) for item in data['__children__']]
-        [entry.attrib.__setitem__(key, data[key]) for key in data.keys() \
+        [entry.attrib.__setitem__(key, data[key]) for key in list(data.keys()) \
          if not key.startswith('__')]
 
 # new unified EntrySet backend
@@ -571,7 +572,7 @@ class EntrySet:
         self.specific = re.compile(pattern)
 
     def get_matching(self, metadata):
-        return [item for item in self.entries.values() \
+        return [item for item in list(self.entries.values()) \
                 if item.specific.matches(metadata)]
 
     def handle_event(self, event):
@@ -643,7 +644,7 @@ class EntrySet:
                     continue
                 else:
                     mgd = match.groupdict()
-                    for key, value in mgd.iteritems():
+                    for key, value in mgd.items():
                         if value:
                             self.metadata[key] = value
                     if len(self.metadata['perms']) == 3:
@@ -673,7 +674,7 @@ class EntrySet:
                              (entry.get('name')))
                 raise PluginExecutionError
             [entry.attrib.__setitem__(key, value) \
-             for (key, value) in mdata['Info'][None].iteritems()]
+             for (key, value) in mdata['Info'][None].items()]
 
     def bind_entry(self, entry, metadata):
         '''Return the appropriate interpreted template from the set of available templates'''
@@ -756,9 +757,9 @@ class GroupSpool(Plugin, Generator):
         if not relative.endswith('/'):
             relative += '/'
         name = self.data + relative
-        if relative not in self.handles.values():
+        if relative not in list(self.handles.values()):
             if not posixpath.isdir(name):
-                print "Failed to open directory %s" % (name)
+                print("Failed to open directory %s" % (name))
                 return
             reqid = self.core.fam.AddMonitor(name, self)
             self.handles[reqid] = relative

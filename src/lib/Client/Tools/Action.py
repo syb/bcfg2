@@ -20,7 +20,7 @@ class Action(Bcfg2.Client.Tools.Tool):
         if not self.setup['dryrun']:
             if self.setup['interactive']:
                 prompt = 'Run Action %s, %s: (y/N): ' % (entry.get('name'), entry.get('command'))
-                if raw_input(prompt) not in ['y', 'Y']:
+                if input(prompt) not in ['y', 'Y']:
                     return False
             if self.setup['servicemode'] == 'build':
                 if entry.get('build', 'true') == 'false':

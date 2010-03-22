@@ -39,7 +39,7 @@ class Account(Bcfg2.Server.Plugin.Plugin,
         entry.text += self.repository.entries["dyn.%s" % (fname)].data
         perms = {'owner':'root', 'group':'root', 'perms':'0644'}
         [entry.attrib.__setitem__(key, value) for (key, value) in \
-         perms.iteritems()]
+         perms.items()]
 
     def gen_limits_cb(self, entry, metadata):
         '''Build limits entries based on current ACLs'''
@@ -51,7 +51,7 @@ class Account(Bcfg2.Server.Plugin.Plugin,
                  useraccess if host == metadata.hostname.split('.')[0]]
         perms = {'owner':'root', 'group':'root', 'perms':'0600'}
         [entry.attrib.__setitem__(key, value) for (key, value) in \
-         perms.iteritems()]
+         perms.items()]
         entry.text += "".join(["%s hard maxlogins 1024\n" % uname for uname in superusers + users])
         if "*" not in users:
             entry.text += "* hard maxlogins 0\n"
@@ -72,7 +72,7 @@ class Account(Bcfg2.Server.Plugin.Plugin,
                               ("%s.key" % user) in rdata])
         perms = {'owner':'root', 'group':'root', 'perms':'0600'}
         [entry.attrib.__setitem__(key, value) for (key, value) \
-         in perms.iteritems()]
+         in perms.items()]
 
     def gen_sudoers(self, entry, metadata):
         '''Build root authorized keys file based on current ACLs'''
@@ -89,4 +89,4 @@ class Account(Bcfg2.Server.Plugin.Plugin,
                                for uname in superusers])
         perms = {'owner':'root', 'group':'root', 'perms':'0440'}
         [entry.attrib.__setitem__(key, value) for (key, value) \
-         in perms.iteritems()]
+         in perms.items()]

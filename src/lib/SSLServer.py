@@ -8,10 +8,10 @@ __all__ = [
 
 import os
 import sys
-import xmlrpclib
+import xmlrpc.client
 import socket
-import SocketServer
-import SimpleXMLRPCServer
+import socketserver
+import xmlrpc.server
 import base64
 import select
 import signal
@@ -23,44 +23,44 @@ import time
 class ForkedChild(Exception):
     pass
 
-class XMLRPCDispatcher (SimpleXMLRPCServer.SimpleXMLRPCDispatcher):
+class XMLRPCDispatcher (xmlrpc.server.SimpleXMLRPCDispatcher):
     logger = logging.getLogger("Cobalt.Server.XMLRPCDispatcher")
     def __init__(self, allow_none, encoding):
         try:
-            SimpleXMLRPCServer.SimpleXMLRPCDispatcher.__init__(self,
+            xmlrpc.server.SimpleXMLRPCDispatcher.__init__(self,
                                                                allow_none,
                                                                encoding)
         except:
             # Python 2.4?
-            SimpleXMLRPCServer.SimpleXMLRPCDispatcher.__init__(self)
+            xmlrpc.server.SimpleXMLRPCDispatcher.__init__(self)
 
         self.allow_none = allow_none
         self.encoding = encoding
 
     def _marshaled_dispatch(self, address, data):
         method_func = None
-        params, method = xmlrpclib.loads(data)
+        params, method = xmlrpc.client.loads(data)
         try:
             if '.' not in method:
                 params = (address, ) + params
             response = self.instance._dispatch(method, params, self.funcs)
             response = (response, )
-            raw_response = xmlrpclib.dumps(response, methodresponse=1,
+            raw_response = xmlrpc.client.dumps(response, methodresponse=1,
                                            allow_none=self.allow_none,
                                            encoding=self.encoding)
-        except xmlrpclib.Fault, fault:
-            raw_response = xmlrpclib.dumps(fault,
+        except xmlrpc.client.Fault as fault:
+            raw_response = xmlrpc.client.dumps(fault,
                                            allow_none=self.allow_none,
                                            encoding=self.encoding)
         except:
             self.logger.error("Unexpected handler error", exc_info=1)
             # report exception back to server
-            raw_response = xmlrpclib.dumps(
-                xmlrpclib.Fault(1, "%s:%s" % (sys.exc_type, sys.exc_value)),
+            raw_response = xmlrpc.client.dumps(
+                xmlrpc.client.Fault(1, "%s:%s" % (sys.exc_info()[0], sys.exc_info()[1])),
                 allow_none=self.allow_none, encoding=self.encoding)
         return raw_response
 
-class SSLServer (SocketServer.TCPServer, object):
+class SSLServer (socketserver.TCPServer, object):
 
     """TCP server supporting SSL encryption.
 
@@ -92,7 +92,7 @@ class SSLServer (SocketServer.TCPServer, object):
 
         all_iface_address = ('', server_address[1])
         try:
-            SocketServer.TCPServer.__init__(self, all_iface_address,
+            socketserver.TCPServer.__init__(self, all_iface_address,
                                             RequestHandlerClass)
         except socket.error:
             self.logger.error("Failed to bind to socket")
@@ -103,17 +103,17 @@ class SSLServer (SocketServer.TCPServer, object):
         if keyfile != None:
             if keyfile == False or not os.path.exists(keyfile):
                 self.logger.error("Keyfile %s does not exist" % keyfile)
-                raise Exception, "keyfile doesn't exist"
+                raise Exception("keyfile doesn't exist")
         self.certfile = certfile
         if certfile != None:
             if certfile == False or not os.path.exists(certfile):
                 self.logger.error("Certfile %s does not exist" % certfile)
-                raise Exception, "certfile doesn't exist"
+                raise Exception("certfile doesn't exist")
         self.ca = ca
         if ca != None:
             if ca == False or not os.path.exists(ca):
                 self.logger.error("CA %s does not exist" % ca)
-                raise Exception, "ca doesn't exist"
+                raise Exception("ca doesn't exist")
         self.reqCert = reqCert
         if ca and certfile:
             self.mode = ssl.CERT_OPTIONAL
@@ -125,7 +125,7 @@ class SSLServer (SocketServer.TCPServer, object):
             self.ssl_protocol = ssl.PROTOCOL_TLSv1
         else:
             self.logger.error("Unknown protocol %s" % (protocol))
-            raise Exception, "unknown protocol %s" % protocol
+            raise Exception("unknown protocol %s" % protocol)
 
     def get_request(self):
         (sock, sockinfo) = self.socket.accept()
@@ -146,7 +146,7 @@ class SSLServer (SocketServer.TCPServer, object):
     url = property(_get_url)
 
 
-class XMLRPCRequestHandler (SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
+class XMLRPCRequestHandler (xmlrpc.server.SimpleXMLRPCRequestHandler):
 
     """Component XML-RPC request handler.
 
@@ -183,7 +183,7 @@ class XMLRPCRequestHandler (SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
         """Extends parse_request.
 
         Optionally check HTTP authentication when parsing."""
-        if not SimpleXMLRPCServer.SimpleXMLRPCRequestHandler.parse_request(self):
+        if not xmlrpc.server.SimpleXMLRPCRequestHandler.parse_request(self):
             return False
         try:
             if not self.authenticate():
@@ -206,7 +206,7 @@ class XMLRPCRequestHandler (SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
                 try:
                     select.select([self.rfile.fileno()], [], [], 3)
                 except select.error:
-                    print "got select timeout"
+                    print("got select timeout")
                     raise
                 chunk_size = min(size_remaining, max_chunk_size)
                 L.append(self.rfile.read(chunk_size))
@@ -232,7 +232,7 @@ class XMLRPCRequestHandler (SimpleXMLRPCServer.SimpleXMLRPCRequestHandler):
             self.wfile.close()
         self.rfile.close()
 
-class XMLRPCServer (SocketServer.ThreadingMixIn, SSLServer,
+class XMLRPCServer (socketserver.ThreadingMixIn, SSLServer,
                     XMLRPCDispatcher, object):
 
     """Component XMLRPCServer.
@@ -329,7 +329,7 @@ class XMLRPCServer (SocketServer.ThreadingMixIn, SSLServer,
         except AttributeError:
             name = "unknown"
         if hasattr(instance, 'plugins'):
-            for pname, pinst in instance.plugins.iteritems():
+            for pname, pinst in instance.plugins.items():
                 for mname in pinst.__rmi__:
                     xmname = "%s.%s" % (pname, mname)
                     fn = getattr(pinst, mname)

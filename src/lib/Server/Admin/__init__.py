@@ -3,7 +3,7 @@ __revision__ = '$Revision$'
 __all__ = ['Mode', 'Client', 'Compare', 'Init', 'Minestruct', 'Perf',
            'Pull', 'Query', 'Snapshots', 'Tidy', 'Viz', 'Xcmd']
 
-import ConfigParser
+import configparser
 import logging
 import lxml.etree
 import sys
@@ -26,7 +26,7 @@ class Mode(object):
 
     def getCFP(self):
         if not self.__cfp:
-            self.__cfp = ConfigParser.ConfigParser()
+            self.__cfp = configparser.ConfigParser()
             self.__cfp.read(self.configfile)
         return self.__cfp
 
@@ -34,11 +34,11 @@ class Mode(object):
 
     def __call__(self, args):
         if len(args) > 0 and args[0] == 'help':
-            print self.__longhelp__
+            print(self.__longhelp__)
             raise SystemExit(0)
 
     def errExit(self, emsg):
-        print emsg
+        print(emsg)
         raise SystemExit(1)
 
     def get_repo_path(self):
@@ -79,8 +79,8 @@ class Mode(object):
         # print out the table
         print(borderline)
         for row in rows:
-            print(vdelim.join([justify(str(item), width) for \
-                               (item, width) in zip(row, colWidths)]))
+            print((vdelim.join([justify(str(item), width) for \
+                               (item, width) in zip(row, colWidths)])))
             if hdr:
                 print(borderline)
                 hdr = False
@@ -101,7 +101,7 @@ class MetadataCore(Mode):
             self.bcore = Bcfg2.Server.Core.Core(self.get_repo_path(),
                                                 setup['plugins'],
                                                 'foo', 'UTF-8')
-        except Bcfg2.Server.Core.CoreInitError, msg:
+        except Bcfg2.Server.Core.CoreInitError as msg:
             self.errExit("Core load failed because %s" % msg)
         self.bcore.fam.handle_events_in_interval(5)
         self.metadata = self.bcore.metadata

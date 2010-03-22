@@ -491,7 +491,7 @@ class POSIX(Bcfg2.Client.Tools.Tool):
             try:
                 content = open(entry.get('name')).read()
                 entry.set('current_bfile', binascii.b2a_base64(content))
-            except IOError, error:
+            except IOError as error:
                 self.logger.error("Failed to read %s: %s" % (error.filename, error.strerror))
 
     def VerifyConfigFile(self, entry, _):
@@ -510,15 +510,15 @@ class POSIX(Bcfg2.Client.Tools.Tool):
                                   (entry.get('name')))
                 return False
             tempdata = entry.text
-            if type(tempdata) == unicode:
+            if type(tempdata) == str:
                 try:
                     tempdata = tempdata.encode(self.setup['encoding'])
-                except UnicodeEncodeError, e:
+                except UnicodeEncodeError as e:
                     self.logger.error("Error encoding file %s:\n %s" % \
                                       (entry.get('name'), e))
         try:
             content = open(entry.get('name')).read()
-        except IOError, error:
+        except IOError as error:
             if error.strerror == "No such file or directory":
                 # print diff for files that don't exist (yet)
                 content = ''
@@ -634,7 +634,7 @@ class POSIX(Bcfg2.Client.Tools.Tool):
                             "%s/%s_%s" % (self.ppath, bkupnam, datetime.now()))
                 self.logger.info("Backup of %s saved to %s" %
                                  (entry.get('name'), self.ppath))
-            except IOError, e:
+            except IOError as e:
                 self.logger.error("Failed to create backup file for ConfigFile %s" % \
                                   (entry.get('name')))
                 self.logger.error(e)
@@ -646,7 +646,7 @@ class POSIX(Bcfg2.Client.Tools.Tool):
             elif entry.get('empty', 'false') == 'true':
                 filedata = ''
             else:
-                if type(entry.text) == unicode:
+                if type(entry.text) == str:
                     filedata = entry.text.encode(self.setup['encoding'])
                 else:
                     filedata = entry.text
@@ -670,7 +670,7 @@ class POSIX(Bcfg2.Client.Tools.Tool):
                                       % (entry.get('name')))
                     return False
             return True
-        except (OSError, IOError), err:
+        except (OSError, IOError) as err:
             if err.errno == 13:
                 self.logger.info("Failed to open %s for writing" % (entry.get('name')))
             else:

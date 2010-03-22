@@ -34,7 +34,7 @@ class Pull(Bcfg2.Server.Admin.MetadataCore):
         try:
             opts, gargs = getopt.getopt(args, 'vfI')
         except:
-            print self.__shorthelp__
+            print(self.__shorthelp__)
             raise SystemExit(1)
         for opt in opts:
             if opt[0] == '-v':
@@ -55,7 +55,7 @@ class Pull(Bcfg2.Server.Admin.MetadataCore):
                 break
             except Bcfg2.Server.Plugin.PluginExecutionError:
                 if plugin == self.bcore.pull_sources[-1]:
-                    print "Pull Source failure; could not fetch current state"
+                    print("Pull Source failure; could not fetch current state")
                     raise SystemExit(1)
 
         try:
@@ -64,7 +64,7 @@ class Pull(Bcfg2.Server.Admin.MetadataCore):
             print("Unable to build entry. "
                   "Do you have a statistics plugin enabled?")
             raise SystemExit(1)
-        for k, v in data.iteritems():
+        for k, v in data.items():
             if v:
                 new_entry[k] = v
         #print new_entry
@@ -74,17 +74,17 @@ class Pull(Bcfg2.Server.Admin.MetadataCore):
         '''Determine where to put pull data'''
         if self.mode == 'interactive':
             for choice in choices:
-                print "Plugin returned choice:"
+                print("Plugin returned choice:")
                 if id(choice) == id(choices[0]):
-                    print "(current entry)",
+                    print("(current entry)", end=' ')
                 if choice.all:
-                    print " => global entry"
+                    print(" => global entry")
                 elif choice.group:
-                    print (" => group entry: %s (prio %d)" %
-                           (choice.group, choice.prio))
+                    print((" => group entry: %s (prio %d)" %
+                           (choice.group, choice.prio)))
                 else:
-                    print " => host entry: %s" % (choice.hostname)
-                if raw_input("Use this entry? [yN]: ") in ['y', 'Y']:
+                    print(" => host entry: %s" % (choice.hostname))
+                if input("Use this entry? [yN]: ") in ['y', 'Y']:
                     return choice
             return False
         else:

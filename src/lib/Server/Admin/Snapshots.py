@@ -29,7 +29,7 @@ class Snapshots(Bcfg2.Server.Admin.Mode):
     def __call__(self, args):
         Bcfg2.Server.Admin.Mode.__call__(self, args)
         if len(args) == 0 or args[0] == '-h':
-            print(self.__usage__)
+            print((self.__usage__))
             raise SystemExit(0)
 
         if args[0] == 'query':
@@ -52,7 +52,7 @@ class Snapshots(Bcfg2.Server.Admin.Mode):
                 elif q_obj == Group:
                     print("Groups:")
                     for group in self.session.query(q_obj).all():
-                        print(" %s" % group.name)
+                        print((" %s" % group.name))
                 else:
                     results = self.session.query(q_obj).all()
             else:
@@ -70,15 +70,15 @@ class Snapshots(Bcfg2.Server.Admin.Mode):
             session.commit()
         elif args[0] == 'dump':
             client = args[1]
-            snap = Snapshot.get_current(self.session, unicode(client))
+            snap = Snapshot.get_current(self.session, str(client))
             if not snap:
-                print("Current snapshot for %s not found" % client)
+                print(("Current snapshot for %s not found" % client))
                 sys.exit(1)
-            print("Client %s last run at %s" % (client, snap.timestamp))
+            print(("Client %s last run at %s" % (client, snap.timestamp)))
             for pkg in snap.packages:
-                print("C:", pkg.correct, 'M:', pkg.modified)
-                print("start", pkg.start.name, pkg.start.version)
-                print("end", pkg.end.name, pkg.end.version)
+                print(("C:", pkg.correct, 'M:', pkg.modified))
+                print(("start", pkg.start.name, pkg.start.version))
+                print(("end", pkg.end.name, pkg.end.version))
         elif args[0] == 'reports':
             # bcfg2-admin reporting interface for Snapshots
             if '-a' in args[1:]:
@@ -104,41 +104,41 @@ class Snapshots(Bcfg2.Server.Admin.Mode):
                     print("Usage: bcfg2-admin snapshots -b <client>")
                     return
                 client = args[2]
-                snap = Snapshot.get_current(self.session, unicode(client))
+                snap = Snapshot.get_current(self.session, str(client))
                 if not snap:
-                    print("Current snapshot for %s not found" % client)
+                    print(("Current snapshot for %s not found" % client))
                     sys.exit(1)
                 print("Bad entries:")
                 bad_pkgs = [self.session.query(Package)
                                 .filter(Package.id==p.start_id).one().name \
                             for p in snap.packages if p.correct == False]
                 for p in bad_pkgs:
-                    print(" Package:%s" % p)
+                    print((" Package:%s" % p))
                 bad_files = [self.session.query(File)
                                 .filter(File.id==f.start_id).one().name \
                              for f in snap.files if f.correct == False]
                 for filename in bad_files:
-                    print(" File:%s" % filename)
+                    print((" File:%s" % filename))
                 bad_svcs = [self.session.query(Service)
                                 .filter(Service.id==s.start_id).one().name \
                             for s in snap.services if s.correct == False]
                 for svc in bad_svcs:
-                    print(" Service:%s" % svc)
+                    print((" Service:%s" % svc))
             elif '-e' in args[1:]:
                 # Query a single host for extra entries
                 client = args[2]
-                snap = Snapshot.get_current(self.session, unicode(client))
+                snap = Snapshot.get_current(self.session, str(client))
                 if not snap:
-                    print("Current snapshot for %s not found" % client)
+                    print(("Current snapshot for %s not found" % client))
                     sys.exit(1)
                 print("Extra entries:")
                 for pkg in snap.extra_packages:
-                    print(" Package:%s" % pkg.name)
+                    print((" Package:%s" % pkg.name))
                 # FIXME: Do we know about extra files yet?
                 for f in snap.extra_files:
-                    print(" File:%s" % f.name)
+                    print((" File:%s" % f.name))
                 for svc in snap.extra_services:
-                    print(" Service:%s" % svc.name)
+                    print((" Service:%s" % svc.name))
             elif '--date' in args[1:]:
                 year, month, day = args[2:]
                 timestamp = date(int(year), int(month), int(day))
@@ -160,4 +160,4 @@ class Snapshots(Bcfg2.Server.Admin.Mode):
                                  vdelim=" ",
                                  padding=1)
             else:
-                print("Unknown options: ", args[1:])
+                print(("Unknown options: ", args[1:]))

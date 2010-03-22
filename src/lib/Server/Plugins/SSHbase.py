@@ -50,7 +50,7 @@ class SSHbase(Bcfg2.Server.Plugin.Plugin,
         try:
             Bcfg2.Server.Plugin.DirectoryBacked.__init__(self, self.data,
                                                          self.core.fam)
-        except OSError, ioerr:
+        except OSError as ioerr:
             self.logger.error("Failed to load SSHbase repository from %s" \
                               % (self.data))
             self.logger.error(ioerr)
@@ -64,14 +64,14 @@ class SSHbase(Bcfg2.Server.Plugin.Plugin,
                          '/etc/ssh/ssh_host_key': self.build_hk,
                          '/etc/ssh/ssh_host_key.pub': self.build_hk}}
         self.ipcache = {}
-	self.namecache = {}
+        self.namecache = {}
         self.__skn = False
 
     def get_skn(self):
         '''build memory cache of the ssh known hosts file'''
         if not self.__skn:
             self.__skn = "\n".join([value.data for key, value in \
-                                    self.entries.iteritems() if \
+                                    list(self.entries.items()) if \
                                     key.endswith('.static')])
             names = dict()
             # if no metadata is registered yet, defer
@@ -82,7 +82,7 @@ class SSHbase(Bcfg2.Server.Plugin.Plugin,
                 names[cmeta.hostname] = set([cmeta.hostname])
                 names[cmeta.hostname].update(cmeta.aliases)
                 newnames = set()
-		newips = set()
+                newips = set()
                 for name in names[cmeta.hostname]:
                     newnames.add(name.split('.')[0])
                     try:
@@ -91,16 +91,16 @@ class SSHbase(Bcfg2.Server.Plugin.Plugin,
                         continue
                 names[cmeta.hostname].update(newnames)
                 names[cmeta.hostname].update(cmeta.addresses)
-		names[cmeta.hostname].update(newips)
-		# TODO: Only perform reverse lookups on IPs if an option is set.
-		if True:
-		    for ip in newips:
-			try:
-			    names[cmeta.hostname].update(self.get_namecache_entry(ip))
-			except:
-			    continue
+                names[cmeta.hostname].update(newips)
+                # TODO: Only perform reverse lookups on IPs if an option is set.
+                if True:
+                    for ip in newips:
+                        try:
+                            names[cmeta.hostname].update(self.get_namecache_entry(ip))
+                        except:
+                            continue
             # now we have our name cache
-            pubkeys = [pubk for pubk in self.entries.keys() \
+            pubkeys = [pubk for pubk in list(self.entries.keys()) \
                        if pubk.find('.pub.H_') != -1]
             pubkeys.sort()
             badnames = set()
@@ -128,7 +128,7 @@ class SSHbase(Bcfg2.Server.Plugin.Plugin,
         if event and event.filename.endswith('.static'):
             self.skn = False
         if not self.__skn:
-            if (len(self.entries.keys())) >= (len(os.listdir(self.data))-1):
+            if (len(list(self.entries.keys()))) >= (len(os.listdir(self.data))-1):
                 _ = self.skn
 
     def HandlesEntry(self, entry, _):
@@ -170,27 +170,27 @@ class SSHbase(Bcfg2.Server.Plugin.Plugin,
                 raise socket.gaierror
 
     def get_namecache_entry(self, cip):
-	'''build a cache of name lookups from client IP addresses'''
-	if cip in self.namecache:
-	    # lookup cached name from IP
-	    if self.namecache[cip]:
-		return self.namecache[cip]
-	    else:
-		raise socket.gaierror
-	else:
-	    # add an entry that has not been cached
-	    try:
-		rvlookup = socket.gethostbyaddr(cip)
-		if rvlookup[0]:
-		    self.namecache[cip] = [rvlookup[0]]
-		else:
-		    self.namecache[cip] = []
-		self.namecache[cip].extend(rvlookup[1])
-		return self.namecache[cip]
-	    except socket.gaierror:
-		self.namecache[cip] = False
-		self.logger.error("Failed to find any names associated with IP address %s" % cip)
-		raise
+        '''build a cache of name lookups from client IP addresses'''
+        if cip in self.namecache:
+            # lookup cached name from IP
+            if self.namecache[cip]:
+                return self.namecache[cip]
+            else:
+                raise socket.gaierror
+        else:
+            # add an entry that has not been cached
+            try:
+                rvlookup = socket.gethostbyaddr(cip)
+                if rvlookup[0]:
+                    self.namecache[cip] = [rvlookup[0]]
+                else:
+                    self.namecache[cip] = []
+                self.namecache[cip].extend(rvlookup[1])
+                return self.namecache[cip]
+            except socket.gaierror:
+                self.namecache[cip] = False
+                self.logger.error("Failed to find any names associated with IP address %s" % cip)
+                raise
 
     def build_skn(self, entry, metadata):
         '''This function builds builds a host specific known_hosts file'''
@@ -212,7 +212,7 @@ class SSHbase(Bcfg2.Server.Plugin.Plugin,
         '''This binds host key data into entries'''
         client = metadata.hostname
         filename = "%s.H_%s" % (entry.get('name').split('/')[-1], client)
-        if filename not in self.entries.keys():
+        if filename not in list(self.entries.keys()):
             self.GenerateHostKeys(client)
         if not filename in self.entries:
             self.logger.error("%s still not registered" % filename)
@@ -242,7 +242,7 @@ class SSHbase(Bcfg2.Server.Plugin.Plugin,
             else:
                 keytype = 'rsa1'
 
-            if hostkey not in self.entries.keys():
+            if hostkey not in list(self.entries.keys()):
                 fileloc = "%s/%s" % (self.data, hostkey)
                 publoc = self.data + '/' + ".".join([hostkey.split('.')[0],
                                                      'pub',
@@ -273,4 +273,4 @@ class SSHbase(Bcfg2.Server.Plugin.Plugin,
                                    specific.hostname)
         open(filename, 'w').write(entry['text'])
         if log:
-            print "Wrote file %s" % filename
+            print(("Wrote file %s" % filename))

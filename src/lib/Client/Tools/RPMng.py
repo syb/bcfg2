@@ -2,10 +2,10 @@
 
 __revision__ = '$Revision$'
 
-import ConfigParser
+import configparser
 import os.path
 import rpm
-import rpmtools
+from . import rpmtools
 import Bcfg2.Client.Tools
 
 # Fix for python2.3
@@ -48,7 +48,7 @@ class RPMng(Bcfg2.Client.Tools.PkgTool):
         self.gpg_keyids = self.getinstalledgpg()
 
         # Process thee RPMng section from the config file.
-        RPMng_CP = ConfigParser.ConfigParser()
+        RPMng_CP = configparser.ConfigParser()
         RPMng_CP.read(self.setup.get('setup'))
 
         # installonlypackages

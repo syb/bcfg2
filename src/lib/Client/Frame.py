@@ -25,7 +25,7 @@ def promptFilter(prompt, entries):
         else:
             iprompt = prompt % (entry.tag, entry.get('name'))
         try:
-            if raw_input(iprompt) in ['y', 'Y']:
+            if input(iprompt) in ['y', 'Y']:
                 ret.append(entry)
         except:
             print("Error while reading input")

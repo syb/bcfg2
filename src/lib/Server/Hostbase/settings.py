@@ -1,4 +1,4 @@
-from ConfigParser import ConfigParser, NoSectionError, NoOptionError
+from configparser import ConfigParser, NoSectionError, NoOptionError
 c = ConfigParser()
 #This needs to be configurable one day somehow
 c.read(['/etc/bcfg2.conf'])

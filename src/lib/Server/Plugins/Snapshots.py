@@ -8,7 +8,7 @@ import Bcfg2.Server.Plugin
 import Bcfg2.Server.Snapshots
 import Bcfg2.Logger
 from Bcfg2.Server.Snapshots.model import Snapshot
-import Queue
+import queue
 import time
 import threading
 
@@ -28,9 +28,9 @@ def build_snap_ent(entry):
     basefields = []
     if entry.tag in ['Package', 'Service']:
         basefields += ['type']
-    desired = dict([(key, unicode(entry.get(key))) for key in basefields])
-    state = dict([(key, unicode(entry.get(key))) for key in basefields])
-    desired.update([(key, unicode(entry.get(key))) for key in \
+    desired = dict([(key, str(entry.get(key))) for key in basefields])
+    state = dict([(key, str(entry.get(key))) for key in basefields])
+    desired.update([(key, str(entry.get(key))) for key in \
                  datafields[entry.tag]])
     if entry.tag == 'ConfigFile' or \
        ((entry.tag == 'Path') and (entry.get('type') == 'file')):
@@ -38,19 +38,19 @@ def build_snap_ent(entry):
             desired['contents'] = None
         else:
             if entry.get('encoding', 'ascii') == 'ascii':
-                desired['contents'] = unicode(entry.text)
+                desired['contents'] = str(entry.text)
             else:
-                desired['contents'] = unicode(binascii.a2b_base64(entry.text))
+                desired['contents'] = str(binascii.a2b_base64(entry.text))
 
         if 'current_bfile' in entry.attrib:
-            state['contents'] = unicode(binascii.a2b_base64( \
+            state['contents'] = str(binascii.a2b_base64( \
                 entry.get('current_bfile')))
         elif 'current_bdiff' in entry.attrib:
             diff = binascii.a2b_base64(entry.get('current_bdiff'))
-            state['contents'] = unicode( \
+            state['contents'] = str( \
                 '\n'.join(difflib.restore(diff.split('\n'), 1)))
 
-    state.update([(key, unicode(entry.get('current_' + key, entry.get(key)))) \
+    state.update([(key, str(entry.get('current_' + key, entry.get(key)))) \
                   for key in datafields[entry.tag]])
     if entry.tag in ['ConfigFile', 'Path'] and entry.get('exists', 'true') == 'false':
         state = None
@@ -66,7 +66,7 @@ class Snapshots(Bcfg2.Server.Plugin.Statistics,
         Bcfg2.Server.Plugin.Plugin.__init__(self, core, datastore)
         Bcfg2.Server.Plugin.Statistics.__init__(self)
         self.session = Bcfg2.Server.Snapshots.setup_session(core.cfile)
-        self.work_queue = Queue.Queue()
+        self.work_queue = queue.Queue()
         self.loader = threading.Thread(target=self.load_snapshot)
         self.loader.start()
 
@@ -92,9 +92,9 @@ class Snapshots(Bcfg2.Server.Plugin.Statistics,
         bad = []
         state = xdata.find('.//Statistics')
         correct = state.get('state') == 'clean'
-        revision = unicode(state.get('revision', '-1'))
+        revision = str(state.get('revision', '-1'))
         for entry in state.find('.//Bad'):
-            data = [False, False, unicode(entry.get('name'))] \
+            data = [False, False, str(entry.get('name'))] \
                    + build_snap_ent(entry)
             if entry.tag in ftypes:
                 etag = 'Path'
@@ -107,19 +107,19 @@ class Snapshots(Bcfg2.Server.Plugin.Statistics,
             else:
                 etag = entry.tag
             if entry.get('name') in entries[etag]:
-                data = [True, False, unicode(entry.get('name'))] + \
+                data = [True, False, str(entry.get('name'))] + \
                        build_snap_ent(entry)
             else:
-                data = [True, False, unicode(entry.get('name'))] + \
+                data = [True, False, str(entry.get('name'))] + \
                        build_snap_ent(entry)
         for entry in state.find('.//Extra'):
             if entry.tag in datafields:
                 data = build_snap_ent(entry)[1]
-                ename = unicode(entry.get('name'))
+                ename = str(entry.get('name'))
                 data['name'] = ename
                 extra[entry.tag][ename] = data
             else:
-                print "extra", entry.tag, entry.get('name')
+                print(("extra", entry.tag, entry.get('name')))
         t2 = time.time()
         snap = Snapshot.from_data(self.session, correct, revision,
                                   metadata, entries, extra)

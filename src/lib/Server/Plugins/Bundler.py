@@ -56,14 +56,14 @@ class Bundler(Bcfg2.Server.Plugin.Plugin,
         '''Build all structures for client (metadata)'''
         bundleset = []
         for bundlename in metadata.bundles:
-            entries = [item for (key, item) in self.entries.iteritems() if \
+            entries = [item for (key, item) in self.entries.items() if \
                        self.patterns.match(key).group('name') == bundlename]
             if len(entries) == 0:
                 continue
             elif len(entries) == 1:
                 try:
                     bundleset.append(entries[0].get_xml_value(metadata))
-                except genshi.template.base.TemplateError, t:
+                except genshi.template.base.TemplateError as t:
                     self.logger.error("Bundler: Failed to template genshi bundle %s" \
                                       % (bundlename))
                     self.logger.error(t)

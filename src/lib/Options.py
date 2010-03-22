@@ -1,7 +1,7 @@
 '''Option parsing library for utilities'''
 __revision__ = '$Revision$'
 
-import ConfigParser
+import configparser
 import getopt
 import os
 import sys
@@ -25,7 +25,7 @@ class Option(object):
 
     def getCFP(self):
         if not self.__cfp:
-            self.__cfp = ConfigParser.ConfigParser()
+            self.__cfp = configparser.ConfigParser()
             self.__cfp.readfp(open(self.cfpath))
         return self.__cfp
     cfp = property(getCFP)
@@ -137,7 +137,7 @@ class OptionSet(dict):
     def helpExit(self, msg='', code=1):
         if msg:
             print(msg)
-        print("Usage:\n     %s" % self.buildHelpMessage())
+        print(("Usage:\n     %s" % self.buildHelpMessage()))
         raise SystemExit(code)
 
     def parse(self, argv, do_getopt=True):
@@ -146,7 +146,7 @@ class OptionSet(dict):
             try:
                 opts, args = getopt.getopt(argv, self.buildGetopt(),
                                            self.buildLongGetopt())
-            except getopt.GetoptError, err:
+            except getopt.GetoptError as err:
                 self.helpExit(err)
             if '-h' in argv:
                 self.helpExit('', 0)

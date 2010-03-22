@@ -103,9 +103,12 @@ class FragmentingSysLogHandler(logging.handlers.SysLogHandler):
         logging.handlers.SysLogHandler.__init__(self, path, facility)
 
     def emit(self, record):
-        '''chunk and deliver records'''
+        """chunk and deliver records
+
+        Create smaller 250 byte chunks.
+        """
         record.name = self.procname
-        if str(record.msg) > 250:
+        if len(record.msg) > 250:
             msgs = []
             error = record.exc_info
             record.exc_info = None
@@ -120,23 +123,27 @@ class FragmentingSysLogHandler(logging.handlers.SysLogHandler):
             msgs = [record]
         while msgs:
             newrec = msgs.pop()
-            msg = self.log_format_string % (self.encodePriority(self.facility,
-                                                                newrec.levelname.lower()), self.format(newrec))
+            """
+            We need to convert record level to lowercase, maybe this will
+            change in the future.
+            """
+            msg = self.log_format_string % (
+                self.encodePriority(self.facility,
+                                    self.mapPriority(newrec.levelname)),
+                                    self.format(newrec))
             try:
-                self.socket.send(msg)
-            except socket.error:
-                for i in xrange(10):
+                if self.unixsocket:
                     try:
-                        if isinstance(self.address, tuple):
-                            self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                            self.socket.connect(self.address)
-                        else:
-                            self._connect_unixsocket(self.address)
-                        break
+                        self.socket.send(msg)
                     except socket.error:
-                        continue
-                self.socket.send("Reconnected to syslog")
-                self.socket.send(msg)
+                        self._connect_unixsocket(self.address)
+                        self.socket.send(msg)
+                else:
+                    self.socket.sendto(msg, self.address)
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except:
+                self.handleError(record)
 
 def setup_logging(procname, to_console=True, to_syslog=True, syslog_facility='daemon', level=0, to_file=None):
     '''setup logging for bcfg2 software'''
@@ -195,7 +202,7 @@ def trace_process(**kwargs):
                 filename = filename[:-1]
             name = frame.f_globals["__name__"]
             line = linecache.getline(filename, lineno)
-            print >> log_file, "%s:%s: %s" % (name, lineno, line.rstrip())
+            print("%s:%s: %s" % (name, lineno, line.rstrip()), file=log_file)
         return traceit
 
     sys.settrace(traceit)

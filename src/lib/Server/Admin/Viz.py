@@ -41,8 +41,8 @@ class Viz(Bcfg2.Server.Admin.MetadataCore):
             opts, args = getopt.getopt(args, 'Hbko:',
                                        ['includehosts', 'includebundles',
                                         'includekey', 'outfile='])
-        except getopt.GetoptError, msg:
-            print msg
+        except getopt.GetoptError as msg:
+            print(msg)
 
         #FIXME: is this for --raw?
         #rset = False
@@ -62,8 +62,8 @@ class Viz(Bcfg2.Server.Admin.MetadataCore):
 
         data = self.Visualize(self.get_repo_path(), hset, bset,
                               kset, outputfile)
-        print data
-        raise SystemExit, 0
+        print(data)
+        raise SystemExit(0)
 
     def Visualize(self, repopath, hosts=False,
                   bundles=False, key=False, output=False):
@@ -81,7 +81,7 @@ class Viz(Bcfg2.Server.Admin.MetadataCore):
         try:
             dotpipe.stdin.write("digraph groups {\n")
         except:
-            print "write to dot process failed. Is graphviz installed?"
+            print("write to dot process failed. Is graphviz installed?")
             raise SystemExit(1)
         dotpipe.stdin.write('\trankdir="LR";\n')
         dotpipe.stdin.write(self.metadata.viz(hosts, bundles,

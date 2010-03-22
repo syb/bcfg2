@@ -2,11 +2,11 @@ __all__ = ['models', 'db_from_config', 'setup_session']
 
 import sqlalchemy
 import sqlalchemy.orm
-import ConfigParser
+import configparser
 
 
 def db_from_config(cfile):
-    cp = ConfigParser.ConfigParser()
+    cp = configparser.ConfigParser()
     cp.read([cfile])
     driver = cp.get('snapshots', 'driver')
     if driver == 'sqlite':
@@ -19,7 +19,7 @@ def db_from_config(cfile):
         db = cp.get('snapshots', 'database')
         return '%s://%s:%s@%s/%s' % (driver, user, password, host, db)
     else:
-        raise Exception, "unsupported db driver %s" % driver
+        raise Exception("unsupported db driver %s" % driver)
 
 
 def setup_session(cfile, debug=False):
