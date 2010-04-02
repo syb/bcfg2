@@ -4,6 +4,7 @@ __revision__ = '$Revision$'
 import binascii
 import os
 import socket
+import shutil
 import tempfile
 from subprocess import Popen, PIPE
 import Bcfg2.Server.Plugin
@@ -99,6 +100,7 @@ class SSHbase(Bcfg2.Server.Plugin.Plugin,
                             names[cmeta.hostname].update(self.get_namecache_entry(ip))
                         except:
                             continue
+                names[cmeta.hostname] = sorted(names[cmeta.hostname])
             # now we have our name cache
             pubkeys = [pubk for pubk in list(self.entries.keys()) \
                        if pubk.find('.pub.H_') != -1]
@@ -251,8 +253,8 @@ class SSHbase(Bcfg2.Server.Plugin.Plugin,
                 temploc = "%s/%s" % (tempdir, hostkey)
                 cmd = 'ssh-keygen -q -f %s -N "" -t %s -C root@%s < /dev/null'
                 os.system(cmd % (temploc, keytype, client))
-                open(fileloc, 'w').write(open(temploc).read())
-                open(publoc, 'w').write(open("%s.pub" % temploc).read())
+                shutil.copy(temploc, fileloc)
+                shutil.copy("%s.pub" % temploc, publoc)
                 self.AddEntry(hostkey)
                 self.AddEntry(".".join([hostkey.split('.')[0]]+['pub', "H_%s" \
                                                                 % client]))
